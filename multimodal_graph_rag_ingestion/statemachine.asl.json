@@ -1,0 +1,72 @@
+{
+    "Comment": "Semantic Lifecycle RAG Pipeline",
+    "StartAt": "IngestOrDelete",
+    "States": {
+        "IngestOrDelete": {
+            "Type": "Task",
+            "Resource": "${IngestFunctionArn}",
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "IntervalSeconds": 5,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2
+                }
+            ],
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "PipelineFailed"
+                }
+            ],
+            "Next": "CheckAction"
+        },
+        "CheckAction": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.status",
+                    "StringEquals": "deleted",
+                    "Next": "SuccessExit"
+                }
+            ],
+            "Default": "LinkDocuments"
+        },
+        "LinkDocuments": {
+            "Type": "Task",
+            "Resource": "${LinkFunctionArn}",
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 2,
+                    "BackoffRate": 1.5
+                }
+            ],
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "PipelineFailed"
+                }
+            ],
+            "Next": "SuccessExit"
+        },
+        "SuccessExit": {
+            "Type": "Pass",
+            "End": true
+        },
+        "PipelineFailed": {
+            "Type": "Fail",
+            "Error": "RAG_PIPELINE_ERROR",
+            "Cause": "Pipeline failed during Ingestion, Deletion, or Linking. Check CloudWatch Logs."
+        }
+    }
+}
