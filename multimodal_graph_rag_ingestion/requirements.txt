@@ -1,0 +1,9 @@
+boto3
+python-dotenv
+langchain
+langchain-google-genai
+langchain-neo4j
+langchain-openai
+langchain-text-splitters
+neo4j
+pymupdf
